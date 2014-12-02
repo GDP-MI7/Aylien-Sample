@@ -1,6 +1,6 @@
 __pycache__/
 *.py[cod]
-aylien_textapi.egg-info/
+aylien_apiclient.egg-info/
 dist/
 
 .tox/

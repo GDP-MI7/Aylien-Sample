@@ -22,7 +22,7 @@ from __future__ import print_function
 import sys
 
 if sys.version_info < (2, 6):
-  print('aylien-textapi requires python version >= 2.6',
+  print('aylien-apiclient requires python version >= 2.6',
       file=sys.stderr)
   sys.exit(1)
 
@@ -48,7 +48,7 @@ import aylienapiclient
 version = aylienapiclient.__version__
 
 setup(
-    name="aylien-textapi",
+    name="aylien-apiclient",
     version=version,
     description="AYLIEN Text API Client Library for Python",
     long_description=long_desc,
