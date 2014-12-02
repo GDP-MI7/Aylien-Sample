@@ -28,9 +28,6 @@ if sys.version_info < (2, 6):
 
 from setuptools import setup
 
-long_desc = """The AYLIEN Text API Client for Python is a client library for
-accessing AYLIEN Text API endpoints."""
-
 packages = [
     'aylienapiclient'
 ]
@@ -51,7 +48,7 @@ setup(
     name="aylien-apiclient",
     version=version,
     description="AYLIEN Text API Client Library for Python",
-    long_description=long_desc,
+    long_description=open('README.rst').read(),
     author="Aylien, Inc.",
     url="https://github.com/AYLIEN/aylien_textapi_python",
     install_requires=install_requires,
@@ -61,6 +58,7 @@ setup(
     license="Apache 2.0",
     keywords="aylien text api client",
     classifiers=[
+      'Development Status :: 3 - Alpha',
       'Intended Audience :: Developers',
       'License :: OSI Approved :: Apache Software License',
       'Operating System :: POSIX',
