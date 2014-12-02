@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+aylien_textapi.egg-info/
+dist/
+
+.tox/
