@@ -4,3 +4,4 @@ aylien_apiclient.egg-info/
 dist/
 
 .tox/
+.coverage
