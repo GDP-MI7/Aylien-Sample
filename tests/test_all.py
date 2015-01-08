@@ -173,3 +173,22 @@ def test_check_for_auth_headers_in_request():
     ok_('x-aylien-textapi-application-' + k in httpretty.last_request().headers)
   eq_(httpretty.last_request().headers['x-aylien-textapi-application-id'], app_id)
   eq_(httpretty.last_request().headers['x-aylien-textapi-application-key'], app_key)
+
+@httpretty.activate
+def test_check_ratelimits():
+  client = textapi.Client('app_id', 'app_key')
+  request = http.Request('sentiment')
+  limit = 1000
+  reset = 1420761600
+  remaining = 954
+  httpretty.register_uri(httpretty.POST, request.uri,
+      body="[]",
+      adding_headers={
+        'X-RateLimit-Limit': limit, 'X-RateLimit-Remaining': remaining,
+        'X-RateLimit-Reset': reset, 'Date': 'Thu, 08 Jan 2015 12:02:19 GMT'
+      })
+  client.Sentiment('random')
+  ratelimits = client.RateLimits()
+  eq_(ratelimits['remaining'], remaining)
+  eq_(ratelimits['limit'], limit)
+  eq_(ratelimits['reset'], reset)

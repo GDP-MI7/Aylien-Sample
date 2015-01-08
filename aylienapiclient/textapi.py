@@ -50,6 +50,7 @@ class Client(object):
     self.applicationKey = applicationKey
     self.useHttps = useHttps
     self.normalizePattern = re.compile(r"^https?://")
+    self._lastResponseHeaders = dict()
 
   """Extracts the main body of article
 
@@ -408,6 +409,23 @@ class Client(object):
 
     return response
 
+  """Returns current client's rate limit values.
+
+  Relies on the HTTP headers of the last response so it's empty on cold start.
+  Making some calls will populate ratelimit fields.
+
+  Returns:
+    A dict with following structure:
+
+      {
+        'limit (int)': Limit,
+        'reset (int)': Unix UTC timestamp indicating the exact time remaining resets,
+        'remaining (int)': Remaining calls
+      }
+  """
+  def RateLimits(self):
+    return {k.replace('x-ratelimit-', ''):int(v) for (k, v) in self._lastResponseHeaders.items() if "x-ratelimit-" in k}
+
   """Executes a request.
 
   Returns: dict
@@ -419,6 +437,7 @@ class Client(object):
   def _executeRequest(self, endpoint, params):
     request = self._buildRequest(endpoint, params)
     response, content = request.execute()
+    self._lastResponseHeaders = response
 
     if response.status >= 300:
       raise HttpError(response, content, uri=request.uri)
