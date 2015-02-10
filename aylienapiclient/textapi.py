@@ -15,6 +15,7 @@
 import re
 import sys
 import json
+import aylienapiclient
 from aylienapiclient.http import Request
 from aylienapiclient.errors import HttpError
 from aylienapiclient.errors import MissingParameterError
@@ -526,7 +527,8 @@ class Client(object):
         'Accept': 'application/json',
         'Content-type': 'application/x-www-form-urlencoded',
         'X-AYLIEN-TextAPI-Application-ID': self.applicationId,
-        'X-AYLIEN-TextAPI-Application-Key': self.applicationKey
+        'X-AYLIEN-TextAPI-Application-Key': self.applicationKey,
+        'User-Agent': "Aylien Text API Python " + aylienapiclient.__version__
         }
     request = Request(endpoint, params, headers, self.useHttps)
 
