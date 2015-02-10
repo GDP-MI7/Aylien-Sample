@@ -43,7 +43,7 @@ def test_generator():
   files = glob.glob('tests/fixtures/*.json')
   for f in files:
     method = pattern.sub(r'\1', f)
-    request = http.Request(method)
+    request = http.Request(method.replace('_', '/'))
     fixtures = open(f)
     test_data = json.load(fixtures)
     for test in test_data['tests']:
@@ -56,9 +56,10 @@ def test_generic_generator():
   files = glob.glob('tests/fixtures/*.json')
   for f in files:
     endpoint = pattern.sub(r'\1', f)
-    yield check_auth, endpoint
+    if endpoint not in ["microformats"]:
+      yield check_auth, endpoint
     yield check_options, endpoint
-    if endpoint != "related":
+    if endpoint not in ["related"]:
       yield check_bad_request, endpoint
 
 @httpretty.activate
@@ -68,13 +69,13 @@ def check_auth(endpoint):
   request = http.Request(endpoint)
   httpretty.register_uri(httpretty.POST, request.uri, status=403,
       body="Authentication parameters missing")
-  method = getattr(client, endpoint.title())
+  method = getattr(client, endpoint.title().replace('_', ''))
   method('random')
 
 @raises(MissingParameterError)
 def check_options(endpoint):
   client = textapi.Client("app_id", "app_key")
-  method = getattr(client, endpoint.title())
+  method = getattr(client, endpoint.title().replace('_', ''))
   method({})
 
 @httpretty.activate
@@ -84,7 +85,7 @@ def check_bad_request(endpoint):
   request = http.Request(endpoint)
   httpretty.register_uri(httpretty.POST, request.uri, status=400,
       body='{"error" : "requirement failed: provided url is not valid."}')
-  method = getattr(client, endpoint.title())
+  method = getattr(client, endpoint.title().replace('_', ''))
   method({'url': 'invalid-url'})
 
 @httpretty.activate
@@ -160,6 +161,23 @@ def check_related(uri, test_input, input_type, expected_output):
   related = client.Related(test_input)
   ok_(input_type in httpretty.last_request().parsed_body)
   ok_('related' in related)
+
+@httpretty.activate
+def check_microformats(uri, test_input, input_type, expected_output):
+  client = textapi.Client("app_id", "app_key")
+  httpretty.register_uri(httpretty.POST, uri, body=expected_output)
+  microformats = client.Microformats(test_input)
+  ok_(input_type in httpretty.last_request().parsed_body)
+  ok_('hCards' in microformats)
+
+@httpretty.activate
+def check_unsupervised_classify(uri, test_input, input_type, expected_output):
+  client = textapi.Client("app_id", "app_key")
+  uri = uri.replace('unsupervised/classify', 'classify/unsupervised')
+  httpretty.register_uri(httpretty.POST, uri, body=expected_output)
+  classes = client.UnsupervisedClassify(test_input)
+  ok_(input_type in httpretty.last_request().parsed_body)
+  ok_('classes' in classes)
 
 @httpretty.activate
 def test_check_for_auth_headers_in_request():

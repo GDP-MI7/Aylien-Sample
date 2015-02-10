@@ -45,8 +45,8 @@ class Request(object):
     self.params = params
 
   def execute(self):
-    return self.http.request(self.uri, 'POST', headers=self.headers,
-        body=urlencode(self.params))
+    body = urlencode([(k, v) for k, vs in self.params.items() for v in isinstance(vs, list) and vs or [vs]])
+    return self.http.request(self.uri, 'POST', headers=self.headers, body=body)
 
   @property
   def uri(self):

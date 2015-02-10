@@ -409,6 +409,73 @@ class Client(object):
 
     return response
 
+
+  """Extracts microformats.
+
+  Args:
+    options (dict):
+
+      {
+        'url (str)': URL
+      }
+
+  Returns:
+    A dict with these keys:
+
+      {
+        'hCards (list of hCard)': hCards
+      }
+  Raises:
+    aylienapiclient.errors.MissingParameterError if url
+      is missing
+  """
+  def Microformats(self, options):
+    options = self._normalizeInput(options)
+    if 'url' not in options:
+      raise MissingParameterError('You must provide a url')
+
+    response = self._executeRequest('microformats', options)
+
+    return response
+
+  """Picks the most semantically relevant class label or tag.
+
+  Args:
+    options (dict):
+
+      {
+        'url (str, optional)': URL,
+        'text (str, optional)': Text,
+        'class (list of str)': List of classes to classify into,
+        'number_of_concepts (int, optional)': Specify the number
+          of concepts used to measure the semantic similarity
+          between two words
+      }
+
+  Returns:
+    A dict with following structure:
+
+      {
+        'text (str)': Text,
+        'classes (list of dict)': [{
+          'label (str)': Class label,
+          'score (float)': Score
+        }]
+      }
+
+  Raises:
+    aylienapiclient.errors.MissingParameterError if both
+      url and text are missing
+  """
+  def UnsupervisedClassify(self, options):
+    options = self._normalizeInput(options)
+    if 'text' not in options and 'url' not in options:
+      raise MissingParameterError('You must either provide url or text')
+
+    response = self._executeRequest('classify/unsupervised', options)
+
+    return response
+
   """Returns current client's rate limit values.
 
   Relies on the HTTP headers of the last response so it's empty on cold start.
