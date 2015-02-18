@@ -439,6 +439,39 @@ class Client(object):
 
     return response
 
+  """Assigns relevant tag to an image.
+
+  Args:
+    options (dict):
+
+      {
+        'url (str)': URL
+      }
+
+  Returns:
+    A dict with these keys:
+
+      {
+        'image (str)': Image URL,
+        'tags (list of dict)': [{
+          'tag (str)': Tag name,
+          'confidence (float)': Confidence
+        }]
+      }
+
+  Raises:
+    aylienapiclient.errors.MissingParameterError if url
+      is missing
+  """
+  def ImageTags(self, options):
+    options = self._normalizeInput(options)
+    if 'url' not in options:
+      raise MissingParameterError('You must provide a url')
+
+    response = self._executeRequest('image-tags', options)
+
+    return response
+
   """Picks the most semantically relevant class label or tag.
 
   Args:

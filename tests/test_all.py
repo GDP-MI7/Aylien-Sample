@@ -41,9 +41,13 @@ def test_raises_missing_credentials_error():
 def test_generator():
   pattern = re.compile(r'^tests/fixtures/(\w+).json$')
   files = glob.glob('tests/fixtures/*.json')
+  methodsMap = {
+    'unsupervised_classify': 'classify/unsupervised',
+    'image_tags': 'image-tags'
+  }
   for f in files:
     method = pattern.sub(r'\1', f)
-    request = http.Request(method.replace('_', '/'))
+    request = http.Request(methodsMap.get(method, method))
     fixtures = open(f)
     test_data = json.load(fixtures)
     for test in test_data['tests']:
@@ -56,7 +60,7 @@ def test_generic_generator():
   files = glob.glob('tests/fixtures/*.json')
   for f in files:
     endpoint = pattern.sub(r'\1', f)
-    if endpoint not in ["microformats"]:
+    if endpoint not in ["microformats", "image_tags"]:
       yield check_auth, endpoint
     yield check_options, endpoint
     if endpoint not in ["related"]:
@@ -178,6 +182,15 @@ def check_unsupervised_classify(uri, test_input, input_type, expected_output):
   classes = client.UnsupervisedClassify(test_input)
   ok_(input_type in httpretty.last_request().parsed_body)
   ok_('classes' in classes)
+
+@httpretty.activate
+def check_image_tags(uri, test_input, input_type, expected_output):
+  client = textapi.Client("app_id", "app_key")
+  httpretty.register_uri(httpretty.POST, uri, body=expected_output)
+  tags = client.ImageTags(test_input)
+  ok_(input_type in httpretty.last_request().parsed_body)
+  ok_('tags' in tags)
+  eq_('symbol', tags['tags'][0]['tag'])
 
 @httpretty.activate
 def test_check_for_auth_headers_in_request():
