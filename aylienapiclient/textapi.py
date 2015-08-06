@@ -510,6 +510,42 @@ class Client(object):
 
     return response
 
+  """Runs multiple analysis operations in one API call.
+
+  Args:
+    options (dict):
+
+      {
+        'url (str, optional)': URL,
+        'text (str, optional)': Text,
+        'endpoint (list of str)': List of operations
+      }
+
+  Returns:
+    A dict with following structure:
+
+      {
+        'text (str)': Text,
+        'results (list of dict)': [{
+          'endpoint (str)': Endpoint
+          'result (dict)': Endpoint result. Structure follows their respective
+            individual calls.
+        }]
+      }
+
+  Raises:
+    aylienapiclient.errors.MissingParameterError if both
+      url and text are missing
+  """
+  def Combined(self, options):
+    options = self._normalizeInput(options)
+    if 'text' not in options and 'url' not in options:
+      raise MissingParameterError('You must either provide url or text')
+
+    response = self._executeRequest('combined', options)
+
+    return response
+
   """Returns current client's rate limit values.
 
   Relies on the HTTP headers of the last response so it's empty on cold start.
