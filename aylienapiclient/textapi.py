@@ -561,7 +561,7 @@ class Client(object):
       }
   """
   def RateLimits(self):
-    return {k.replace('x-ratelimit-', ''):int(v) for (k, v) in self._lastResponseHeaders.items() if "x-ratelimit-" in k}
+    return dict((k.replace("x-ratelimit-", ""), int(v)) for (k, v) in self._lastResponseHeaders.items() if "x-ratelimit-" in k)
 
   """Executes a request.
 
