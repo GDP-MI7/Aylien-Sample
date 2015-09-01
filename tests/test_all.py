@@ -1,23 +1,9 @@
-# Copyright 2015 Aylien, Inc. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+from __future__ import print_function
 
-import re
-import uuid
-import glob
-import json
-import unittest
-import httpretty
+import vcr
+import os
+import sys
+import inspect
 
 from nose.tools import eq_
 from nose.tools import ok_
@@ -30,196 +16,168 @@ from aylienapiclient.errors import MissingParameterError
 from aylienapiclient.errors import MissingCredentialsError
 
 try:
-  from StringIO import StringIO
+  from urllib.request import urlopen
 except ImportError:
-  from io import StringIO
+  from urllib2 import urlopen
+
+APP_ID = os.environ['TEXTAPI_APP_ID']
+APP_KEY = os.environ['TEXTAPI_APP_KEY']
+
+aylien_vcr = vcr.VCR(
+    cassette_library_dir='tests/fixtures/cassettes',
+    path_transformer=vcr.VCR.ensure_suffix('.yaml'),
+    filter_headers=['x-aylien-textapi-application-id', 'x-aylien-textapi-application-key'],
+)
+
+endpoints = ['Extract', 'Classify', 'Concepts', 'Entities', 'Hashtags',
+  'Language', 'Related', 'Sentiment', 'Summarize', 'Microformats', 'ImageTags',
+  'UnsupervisedClassify', 'Combined']
+
+generic_counter = 0
+
+def build_path_for_generic_generator(function):
+  return function.__name__ + "_" + endpoints[generic_counter].lower()
+
+def test_generic_generator():
+  for e in endpoints:
+    if e not in ['Microformats', 'ImageTags']:
+      yield check_invalid_auth, e, "random"
+    else:
+      yield check_invalid_auth, e, "http://example.com/"
+
+@raises(HttpError)
+@aylien_vcr.use_cassette(func_path_generator=build_path_for_generic_generator)
+def check_invalid_auth(endpoint, input):
+  global generic_counter
+  generic_counter += 1
+  client = textapi.Client("app_id", "app_key")
+  method = getattr(client, endpoint)
+  method(input)
 
 @raises(MissingCredentialsError)
 def test_raises_missing_credentials_error():
   client = textapi.Client("", "")
 
-def test_generator():
-  pattern = re.compile(r'^tests/fixtures/(\w+).json$')
-  files = glob.glob('tests/fixtures/*.json')
-  methodsMap = {
-    'unsupervised_classify': 'classify/unsupervised',
-    'image_tags': 'image-tags'
-  }
-  for f in files:
-    method = pattern.sub(r'\1', f)
-    request = http.Request(methodsMap.get(method, method))
-    fixtures = open(f)
-    test_data = json.load(fixtures)
-    for test in test_data['tests']:
-      io = StringIO()
-      json.dump(test['output'], io)
-      yield 'check_' + method, request.uri, test['input'], test['input_type'], io.getvalue()
-
-def test_generic_generator():
-  pattern = re.compile(r'^tests/fixtures/(\w+).json$')
-  files = glob.glob('tests/fixtures/*.json')
-  for f in files:
-    endpoint = pattern.sub(r'\1', f)
-    if endpoint not in ["microformats", "image_tags"]:
-      yield check_auth, endpoint
-    yield check_options, endpoint
-    if endpoint not in ["related"]:
-      yield check_bad_request, endpoint
-
-@httpretty.activate
-@raises(HttpError)
-def check_auth(endpoint):
-  client = textapi.Client("app_id", "app_key")
-  request = http.Request(endpoint)
-  httpretty.register_uri(httpretty.POST, request.uri, status=403,
-      body="Authentication parameters missing")
-  method = getattr(client, endpoint.title().replace('_', ''))
-  method('random')
+def test_empty_params_generator():
+  for e in endpoints:
+    yield check_empty_params, e
 
 @raises(MissingParameterError)
-def check_options(endpoint):
+def check_empty_params(endpoint):
   client = textapi.Client("app_id", "app_key")
-  method = getattr(client, endpoint.title().replace('_', ''))
+  method = getattr(client, endpoint)
   method({})
 
-@httpretty.activate
-@raises(HttpError)
-def check_bad_request(endpoint):
-  client = textapi.Client("app_id", "app_key")
-  request = http.Request(endpoint)
-  httpretty.register_uri(httpretty.POST, request.uri, status=400,
-      body='{"error" : "requirement failed: provided url is not valid."}')
-  method = getattr(client, endpoint.title().replace('_', ''))
-  method({'url': 'invalid-url'})
-
-@httpretty.activate
-def check_extract(uri, test_input, input_type, expected_output):
-  client = textapi.Client("app_id", "app_key")
-  httpretty.register_uri(httpretty.POST, uri, body=expected_output)
-  article = client.Extract(test_input)
-  ok_('url' in httpretty.last_request().parsed_body)
-  ok_('author' in article)
-  ok_('title' in article)
-
-@httpretty.activate
-def check_sentiment(uri, test_input, input_type, expected_output):
-  client = textapi.Client("app_id", "app_key")
-  httpretty.register_uri(httpretty.POST, uri, body=expected_output)
-  sentiment = client.Sentiment(test_input)
-  ok_(input_type in httpretty.last_request().parsed_body)
-  for prop in ['polarity', 'subjectivity', 'subjectivity_confidence', 'polarity_confidence']:
+@aylien_vcr.use_cassette()
+def test_sentiment():
+  client = textapi.Client(APP_ID, APP_KEY)
+  sentiment = client.Sentiment({'text': 'John is a very good football player!'})
+  for prop in ['polarity', 'subjectivity', 'polarity_confidence', 'subjectivity_confidence']:
     ok_(prop in sentiment)
+  rate_limits = client.RateLimits()
+  for prop in ['limit', 'remaining', 'reset']:
+    ok_(prop in rate_limits)
 
-@httpretty.activate
-def check_classify(uri, test_input, input_type, expected_output):
-  client = textapi.Client("app_id", "app_key")
-  httpretty.register_uri(httpretty.POST, uri, body=expected_output)
-  classification = client.Classify(test_input)
-  ok_(input_type in httpretty.last_request().parsed_body)
-  ok_('categories' in classification)
-  ok_(hasattr(classification['categories'], "__getitem__"))
+@aylien_vcr.use_cassette()
+def test_extract():
+  client = textapi.Client(APP_ID, APP_KEY)
+  extract = client.Extract({'url': 'http://techcrunch.com/2014/02/27/aylien-launches-text-analysis-api-to-help-developers-extract-meaning-from-documents/'})
+  for prop in ['author', 'image', 'article', 'videos', 'title', 'feeds']:
+    ok_(prop in extract)
 
-@httpretty.activate
-def check_concepts(uri, test_input, input_type, expected_output):
-  client = textapi.Client("app_id", "app_key")
-  httpretty.register_uri(httpretty.POST, uri, body=expected_output)
-  concepts = client.Concepts(test_input)
-  ok_(input_type in httpretty.last_request().parsed_body)
+@aylien_vcr.use_cassette()
+def test_classify():
+  client = textapi.Client(APP_ID, APP_KEY)
+  classify = client.Classify({'url': 'http://www.bbc.com/sport/0/football/25912393'})
+  for prop in ['text', 'language', 'categories']:
+    ok_(prop in classify)
+  ok_(isinstance(classify['categories'], list))
 
-@httpretty.activate
-def check_entities(uri, test_input, input_type, expected_output):
-  client = textapi.Client("app_id", "app_key")
-  httpretty.register_uri(httpretty.POST, uri, body=expected_output)
-  entities = client.Entities(test_input)
-  ok_(input_type in httpretty.last_request().parsed_body)
-  ok_('entities' in entities)
-  ok_('person' in entities['entities'])
+@aylien_vcr.use_cassette()
+def test_concepts():
+  client = textapi.Client(APP_ID, APP_KEY)
+  concepts = client.Concepts({'url': 'http://www.bbc.co.uk/news/business-25821345'})
+  for prop in ['text', 'language', 'concepts']:
+    ok_(prop in concepts)
+  ok_(isinstance(concepts['concepts'], dict))
 
-@httpretty.activate
-def check_hashtags(uri, test_input, input_type, expected_output):
-  client = textapi.Client("app_id", "app_key")
-  httpretty.register_uri(httpretty.POST, uri, body=expected_output)
-  hashtags = client.Hashtags(test_input)
-  ok_(input_type in httpretty.last_request().parsed_body)
+@aylien_vcr.use_cassette()
+def test_entities():
+  client = textapi.Client(APP_ID, APP_KEY)
+  entities = client.Entities({'url': 'http://www.businessinsider.com/carl-icahn-open-letter-to-apple-2014-1'})
+  for prop in ['text', 'language', 'entities']:
+    ok_(prop in entities)
+  ok_(isinstance(entities['entities'], dict))
 
-@httpretty.activate
-def check_language(uri, test_input, input_type, expected_output):
-  client = textapi.Client("app_id", "app_key")
-  httpretty.register_uri(httpretty.POST, uri, body=expected_output)
-  language = client.Language(test_input)
-  ok_(input_type in httpretty.last_request().parsed_body)
-  ok_('lang' in language)
+@aylien_vcr.use_cassette()
+def test_hashtags():
+  client = textapi.Client(APP_ID, APP_KEY)
+  hashtags = client.Hashtags({'url': 'http://www.bbc.com/sport/0/football/25912393'})
+  for prop in ['text', 'language', 'hashtags']:
+    ok_(prop in hashtags)
+  ok_(isinstance(hashtags['hashtags'], list))
 
-@httpretty.activate
-def check_summarize(uri, test_input, input_type, expected_output):
-  client = textapi.Client("app_id", "app_key")
-  httpretty.register_uri(httpretty.POST, uri, body=expected_output)
-  summary = client.Summarize(test_input)
-  ok_(input_type in httpretty.last_request().parsed_body)
-  ok_('sentences' in summary)
+@aylien_vcr.use_cassette()
+def test_language():
+  client = textapi.Client(APP_ID, APP_KEY)
+  language = client.Language("Hello there! How's it going?")
+  for prop in ['text', 'lang', 'confidence']:
+    ok_(prop in language)
 
-@httpretty.activate
-def check_related(uri, test_input, input_type, expected_output):
-  client = textapi.Client("app_id", "app_key")
-  httpretty.register_uri(httpretty.POST, uri, body=expected_output)
-  related = client.Related(test_input)
-  ok_(input_type in httpretty.last_request().parsed_body)
-  ok_('related' in related)
+@aylien_vcr.use_cassette()
+def test_related():
+  client = textapi.Client(APP_ID, APP_KEY)
+  related = client.Related('android')
+  for prop in ['phrase', 'related']:
+    ok_(prop in related)
+  ok_(isinstance(related['related'], list))
 
-@httpretty.activate
-def check_microformats(uri, test_input, input_type, expected_output):
-  client = textapi.Client("app_id", "app_key")
-  httpretty.register_uri(httpretty.POST, uri, body=expected_output)
-  microformats = client.Microformats(test_input)
-  ok_(input_type in httpretty.last_request().parsed_body)
+@aylien_vcr.use_cassette()
+def test_summarize():
+  client = textapi.Client(APP_ID, APP_KEY)
+  summary = client.Summarize('http://techcrunch.com/2014/02/27/aylien-launches-text-analysis-api-to-help-developers-extract-meaning-from-documents/')
+  for prop in ['text', 'sentences']:
+    ok_(prop in summary)
+  ok_(isinstance(summary['sentences'], list))
+
+@aylien_vcr.use_cassette()
+def test_microformats():
+  client = textapi.Client(APP_ID, APP_KEY)
+  microformats = client.Microformats('http://codepen.io/anon/pen/ZYaKbz.html')
   ok_('hCards' in microformats)
+  ok_(isinstance(microformats['hCards'], list))
 
-@httpretty.activate
-def check_unsupervised_classify(uri, test_input, input_type, expected_output):
-  client = textapi.Client("app_id", "app_key")
-  uri = uri.replace('unsupervised/classify', 'classify/unsupervised')
-  httpretty.register_uri(httpretty.POST, uri, body=expected_output)
-  classes = client.UnsupervisedClassify(test_input)
-  ok_(input_type in httpretty.last_request().parsed_body)
-  ok_('classes' in classes)
+@aylien_vcr.use_cassette()
+def test_imagetags():
+  client = textapi.Client(APP_ID, APP_KEY)
+  image_tags = client.ImageTags('http://gluegadget.com/liffey/IMG_1209.png')
+  for prop in ['image', 'tags']:
+    ok_(prop in image_tags)
 
-@httpretty.activate
-def check_image_tags(uri, test_input, input_type, expected_output):
-  client = textapi.Client("app_id", "app_key")
-  httpretty.register_uri(httpretty.POST, uri, body=expected_output)
-  tags = client.ImageTags(test_input)
-  ok_(input_type in httpretty.last_request().parsed_body)
-  ok_('tags' in tags)
-  eq_('symbol', tags['tags'][0]['tag'])
+@aylien_vcr.use_cassette()
+def test_unsupervised_classification():
+  client = textapi.Client(APP_ID, APP_KEY)
+  classification = client.UnsupervisedClassify({
+    'url': 'http://techcrunch.com/2015/07/16/microsoft-will-never-give-up-on-mobile',
+    'class': ['technology', 'sports'],
+  })
+  for prop in ['classes', 'text']:
+    ok_(prop in classification)
+  ok_(isinstance(classification['classes'], list))
 
-@httpretty.activate
-def test_check_for_auth_headers_in_request():
-  app_id = str(uuid.uuid4())
-  app_key = str(uuid.uuid4())
-  client = textapi.Client(app_id, app_key)
-  request = http.Request('sentiment')
-  httpretty.register_uri(httpretty.POST, request.uri, body="[]")
-  client.Sentiment('random')
-  for k in ['id', 'key']:
-    ok_('x-aylien-textapi-application-' + k in httpretty.last_request().headers)
-  eq_(httpretty.last_request().headers['x-aylien-textapi-application-id'], app_id)
-  eq_(httpretty.last_request().headers['x-aylien-textapi-application-key'], app_key)
-
-@httpretty.activate
-def test_check_ratelimits():
-  client = textapi.Client('app_id', 'app_key')
-  request = http.Request('sentiment')
-  limit = 1000
-  reset = 1420761600
-  remaining = 954
-  httpretty.register_uri(httpretty.POST, request.uri,
-      body="[]",
-      adding_headers={
-        'X-RateLimit-Limit': limit, 'X-RateLimit-Remaining': remaining,
-        'X-RateLimit-Reset': reset, 'Date': 'Thu, 08 Jan 2015 12:02:19 GMT'
-      })
-  client.Sentiment('random')
-  ratelimits = client.RateLimits()
-  eq_(ratelimits['remaining'], remaining)
-  eq_(ratelimits['limit'], limit)
-  eq_(ratelimits['reset'], reset)
+def test_combined():
+  with aylien_vcr.use_cassette('tests/fixtures/cassettes/test_combined.yaml') as cass:
+    client = textapi.Client(APP_ID, APP_KEY)
+    request_endpoints = ['entities', 'concepts', 'classify']
+    combined = client.Combined({
+      'url': 'http://www.bbc.com/news/technology-33764155',
+      'endpoint': request_endpoints
+    })
+    for prop in ['results', 'text']:
+      ok_(prop in combined)
+    request = cass.requests[0]
+    eq_(request.method, 'POST')
+    for e in request_endpoints:
+      ok_("endpoint=" + e in str(request.body))
+    endpoints = set(map(lambda e: e['endpoint'], combined['results']))
+    ok_(endpoints == set(request_endpoints))

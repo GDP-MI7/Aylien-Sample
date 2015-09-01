@@ -38,7 +38,7 @@ install_requires = [
 
 tests_require = [
     'nose',
-    'HTTPretty==0.7.0',
+    'vcrpy==1.7.3',
 ]
 
 import aylienapiclient
