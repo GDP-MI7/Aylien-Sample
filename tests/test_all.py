@@ -94,6 +94,14 @@ def test_classify():
   ok_(isinstance(classify['categories'], list))
 
 @aylien_vcr.use_cassette()
+def test_classify_by_taxonomu():
+  client = textapi.Client(APP_ID, APP_KEY)
+  classify = client.ClassifyByTaxonomy({'text': "John is a very good football player", 'taxonomy': "iab-qag"})
+  for prop in ['text', 'language', 'categories']:
+    ok_(prop in classify)
+  ok_(isinstance(classify['categories'], list))
+
+@aylien_vcr.use_cassette()
 def test_concepts():
   client = textapi.Client(APP_ID, APP_KEY)
   concepts = client.Concepts({'url': 'http://www.bbc.co.uk/news/business-25821345'})

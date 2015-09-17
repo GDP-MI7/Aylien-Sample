@@ -133,6 +133,53 @@ class Client(object):
 
     return response
 
+  """Classifies a piece of text.
+
+  Classifies a piece of text according to the specified taxonomy.
+
+  Args:
+    options (dict):
+      {
+        'url (str, optional)': URL,
+        'text (str, optional)': Text,
+        'language (str, optional)': Language of text.
+        'taxonomy (str)': Taxonomy to classify according to.
+      }
+
+  Returns:
+    A dict with these keys:
+
+      {
+        'text (str)': Text,
+        'language (str)': Language of text,
+        'categories (list)': [{
+          'id (str)': ID of category,
+          'label (str)': Label of category,
+          'score (float)': Score of category,
+          'confident (bool)': Confidence flag,
+          'links (links)': [{
+            'rel (string)': link relationship,
+            'link (string)': linked resource
+          }]
+        }]
+      }
+
+  Raises:
+    aylienapiclient.errors.MissingParameterError if both
+      url and text are missing or taxonomy is not specified
+  """
+  def ClassifyByTaxonomy(self, options):
+    options = self._normalizeInput(options)
+    if 'text' not in options and 'url' not in options:
+      raise MissingParameterError('You must either provide url or text')
+
+    if 'taxonomy' not in options:
+      raise MissingParameterError('You must specify the taxonomy')
+
+    response = self._executeRequest('classify/' + options.pop('taxonomy'), options)
+
+    return response
+
   """Extracts named entities mentioned in a document.
 
   Extracts named entities mentioned in a document, disambiguates and
