@@ -1,0 +1,37 @@
+interactions:
+- request:
+    body: text=Delicious+food.+Disappointing+service.
+    headers:
+      accept: [application/json]
+      accept-encoding: ['gzip, deflate']
+      content-type: [application/x-www-form-urlencoded]
+      user-agent: [Aylien Text API Python 0.6.0]
+    method: POST
+    uri: https://api.aylien.com/api/v1/absa/restaurants
+  response:
+    body: {string: !!python/unicode "{\n  \"text\": \"Delicious food. Disappointing
+        service.\",\n  \"domain\": \"restaurants\",\n  \"aspects\": [{\n    \"aspect\":
+        \"food\",\n    \"aspect_confidence\": 0.9835863709449768,\n    \"polarity\":
+        \"positive\",\n    \"polarity_confidence\": 0.9158669114112854\n  }, {\n    \"aspect\":
+        \"staff\",\n    \"aspect_confidence\": 0.9747142195701599,\n    \"polarity\":
+        \"negative\",\n    \"polarity_confidence\": 0.9969394207000732\n  }],\n  \"sentences\":
+        [{\n    \"text\": \"Delicious food.\",\n    \"polarity\": \"positive\",\n
+        \   \"polarity_confidence\": 0.9158669114112854,\n    \"aspects\": [{\n      \"aspect\":
+        \"food\",\n      \"aspect_confidence\": 0.9835863709449768,\n      \"polarity\":
+        \"positive\",\n      \"polarity_confidence\": 0.9158669114112854\n    }]\n
+        \ }, {\n    \"text\": \"Disappointing service.\",\n    \"polarity\": \"negative\",\n
+        \   \"polarity_confidence\": 0.9969394207000732,\n    \"aspects\": [{\n      \"aspect\":
+        \"staff\",\n      \"aspect_confidence\": 0.9747142195701599,\n      \"polarity\":
+        \"negative\",\n      \"polarity_confidence\": 0.9969394207000732\n    }]\n
+        \ }]\n}"}
+    headers:
+      connection: [keep-alive]
+      content-length: ['992']
+      content-type: [application/json;charset=UTF-8]
+      date: ['Wed, 27 Apr 2016 15:46:52 GMT']
+      server: [openresty/1.9.3.2]
+      x-ratelimit-limit: ['6900']
+      x-ratelimit-remaining: ['6887']
+      x-ratelimit-reset: ['1461801600']
+    status: {code: 200, message: OK}
+version: 1

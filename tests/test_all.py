@@ -189,3 +189,12 @@ def test_combined():
       ok_("endpoint=" + e in str(request.body))
     endpoints = set(map(lambda e: e['endpoint'], combined['results']))
     ok_(endpoints == set(request_endpoints))
+
+@aylien_vcr.use_cassette()
+def test_aspect_based_sentiment():
+  client = textapi.Client(APP_ID, APP_KEY)
+  classify = client.AspectBasedSentiment({'text': "Delicious food. Disappointing service.", 'domain': "restaurants"})
+  for prop in ['text', 'domain', 'sentences', 'aspects']:
+    ok_(prop in classify)
+  ok_(isinstance(classify['aspects'], list))
+  ok_(isinstance(classify['sentences'], list))

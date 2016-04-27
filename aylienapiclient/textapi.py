@@ -415,6 +415,61 @@ class Client(object):
 
     return response
 
+  """Detects aspects and sentiment of a body of text.
+
+  Given a review for a product or service, analyzes the sentiment of the
+  review towards each of the aspects of the product or review that are
+  mentioned in it.
+
+  Args:
+    options (dict):
+      {
+        'url (str, optional)': URL,
+        'text (str, optional)': Text,
+        'domain (str)': Domain which document belongs to
+      }
+
+  Returns:
+    A dict with these keys:
+
+      {
+        'text (str)': Text,
+        'domain (str)': Domain,
+        'aspects (list)': [{
+            'aspect (str)': Aspect,
+            'aspect_confidence (float)': Confidence of aspect,
+            'polarity (str)': Aspect polarity,
+            'polarity_confidence (float)': Confidence of aspect polarity
+        }],
+        'sentences (list)': [{
+            'text (str)': Sentence text,
+            'polarity (str)': Sentence polarity,
+            'polarity_confidence (float)': Confidence of sentence polarity,
+            'aspects (list)': [{
+                'aspect (str)': Aspect,
+                'aspect_confidence (float)': Confidence of aspect,
+                'polarity (str)': Aspect polarity,
+                'polarity_confidence (float)': Confidence of aspect polarity
+            }],
+        }]
+      }
+
+  Raises:
+    aylienapiclient.errors.MissingParameterError if both
+      url and text are missing or domain is not specified
+  """
+  def AspectBasedSentiment(self, options):
+    options = self._normalizeInput(options)
+    if 'text' not in options and 'url' not in options:
+      raise MissingParameterError('You must either provide url or text')
+
+    if 'domain' not in options:
+      raise MissingParameterError('You must specify the domain')
+
+    response = self._executeRequest('absa/' + options.pop('domain'), options)
+
+    return response
+
   """Summarizes an article into a few key sentences.
 
   Args:
