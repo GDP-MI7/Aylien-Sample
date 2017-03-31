@@ -44,7 +44,7 @@ class Client(object):
     MissingCredentialsError: If applicationId or applicationKey are empty
   """
   def __init__(self, applicationId, applicationKey, useHttps=True):
-    if not applicationId and not applicationKey:
+    if not applicationId or not applicationKey:
       raise MissingCredentialsError('Invalid Application ID or Application Key.')
 
     self.applicationId = applicationId
