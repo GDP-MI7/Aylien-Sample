@@ -8,6 +8,7 @@ import inspect
 from nose.tools import eq_
 from nose.tools import ok_
 from nose.tools import raises
+from nose.tools import assert_raises
 
 from aylienapiclient import http
 from aylienapiclient import textapi
@@ -54,9 +55,10 @@ def check_invalid_auth(endpoint, input):
   method = getattr(client, endpoint)
   method(input)
 
-@raises(MissingCredentialsError)
 def test_raises_missing_credentials_error():
-  client = textapi.Client("", "")
+  assert_raises(MissingCredentialsError, textapi.Client, "app_id", "")
+  assert_raises(MissingCredentialsError, textapi.Client, "", "app_key")
+  assert_raises(MissingCredentialsError, textapi.Client, "", "")
 
 def test_empty_params_generator():
   for e in endpoints:
