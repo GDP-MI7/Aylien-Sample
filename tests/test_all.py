@@ -27,11 +27,12 @@ APP_KEY = os.environ['TEXTAPI_APP_KEY']
 aylien_vcr = vcr.VCR(
     cassette_library_dir='tests/fixtures/cassettes',
     path_transformer=vcr.VCR.ensure_suffix('.yaml'),
+    record_mode='once',
     filter_headers=['x-aylien-textapi-application-id', 'x-aylien-textapi-application-key'],
 )
 
 endpoints = ['Extract', 'Classify', 'Concepts', 'Entities', 'Hashtags',
-  'Language', 'Sentiment', 'Summarize', 'ImageTags', 'Combined']
+  'Language', 'Sentiment', 'Summarize', 'ImageTags', 'Combined', 'Elsa']
 
 generic_counter = 0
 
@@ -173,3 +174,11 @@ def test_aspect_based_sentiment():
     ok_(prop in classify)
   ok_(isinstance(classify['aspects'], list))
   ok_(isinstance(classify['sentences'], list))
+
+@aylien_vcr.use_cassette()
+def test_elsa():
+  client = textapi.Client(APP_ID, APP_KEY)
+  elsa = client.Elsa({'url': 'http://www.businessinsider.com/carl-icahn-open-letter-to-apple-2014-1'})
+  for prop in ['text', 'language', 'entities']:
+    ok_(prop in elsa)
+  ok_(isinstance(elsa['entities'], list))

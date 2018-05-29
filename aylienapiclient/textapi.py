@@ -544,6 +544,60 @@ class Client(object):
 
     return response
 
+  """Runs Entity Level Sentiment Analysis
+
+  Args:
+    options (dict):
+
+      {
+        'url (str, optional)': URL,
+        'text (str, optional)': Text
+      }
+
+  Returns:
+    A dict with following structure:
+
+      {
+        'text (str)': Text,
+        'language (str)': Language of text,
+        'entities (list of dict)': [{
+          'mentions (list of dict)': [{
+            'offset (int)': Offset in text,
+            'confidence (float)': Confidence,
+            'text (str)': Text,
+            'sentiment (dict)': {
+              'polarity (str)': Polarity positive or negative,
+              'confidence (float)': Confidence
+            }
+          }],
+          'overall_sentiment (dict)': {
+            'polarity (str)': Polarity positive or negative,
+            'confidence (float)': Confidence
+          },
+          'type (str): Entities types',
+          'links (list of dict)': [{
+            'uri (str)': Entity resource link,
+            'provider (str)': Entity provider,
+            'types (list of str)': Entity type link,
+            'confidence (float)': Confidence
+          }]
+        }]
+      }
+
+  Raises:
+    aylienapiclient.errors.MissingParameterError if both
+      url and text are missing
+  """
+
+  def Elsa(self, options):
+    options = self._normalizeInput(options)
+    if 'text' not in options and 'url' not in options:
+      raise MissingParameterError('You must either provide url or text')
+
+    response = self._executeRequest('elsa', options)
+
+    return response
+
   """Returns current client's rate limit values.
 
   Relies on the HTTP headers of the last response so it's empty on cold start.

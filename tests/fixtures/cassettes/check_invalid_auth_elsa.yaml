@@ -1,0 +1,20 @@
+interactions:
+- request:
+    body: !!python/unicode text=random
+    headers:
+      accept: [application/json]
+      accept-encoding: ['gzip, deflate']
+      content-type: [application/x-www-form-urlencoded]
+      user-agent: [Aylien Text API Python 0.6.0]
+    method: POST
+    uri: https://api.aylien.com/api/v1/elsa
+  response:
+    body: {string: !!python/unicode Authentication failed}
+    headers:
+      alt-svc: [clear]
+      content-type: [text/plain; charset=us-ascii]
+      date: ['Tue, 29 May 2018 09:20:43 GMT']
+      server: [openresty/1.13.6.1]
+      via: [1.1 google]
+    status: {code: 403, message: Forbidden}
+version: 1
