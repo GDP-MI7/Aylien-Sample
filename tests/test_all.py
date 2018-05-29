@@ -31,8 +31,7 @@ aylien_vcr = vcr.VCR(
 )
 
 endpoints = ['Extract', 'Classify', 'Concepts', 'Entities', 'Hashtags',
-  'Language', 'Related', 'Sentiment', 'Summarize', 'Microformats', 'ImageTags',
-  'UnsupervisedClassify', 'Combined']
+  'Language', 'Sentiment', 'Summarize', 'ImageTags', 'Combined']
 
 generic_counter = 0
 
@@ -41,7 +40,7 @@ def build_path_for_generic_generator(function):
 
 def test_generic_generator():
   for e in endpoints:
-    if e not in ['Microformats', 'ImageTags']:
+    if e not in ['ImageTags']:
       yield check_invalid_auth, e, "random"
     else:
       yield check_invalid_auth, e, "http://example.com/"
@@ -135,14 +134,6 @@ def test_language():
     ok_(prop in language)
 
 @aylien_vcr.use_cassette()
-def test_related():
-  client = textapi.Client(APP_ID, APP_KEY)
-  related = client.Related('android')
-  for prop in ['phrase', 'related']:
-    ok_(prop in related)
-  ok_(isinstance(related['related'], list))
-
-@aylien_vcr.use_cassette()
 def test_summarize():
   client = textapi.Client(APP_ID, APP_KEY)
   summary = client.Summarize('http://techcrunch.com/2014/02/27/aylien-launches-text-analysis-api-to-help-developers-extract-meaning-from-documents/')
@@ -151,29 +142,11 @@ def test_summarize():
   ok_(isinstance(summary['sentences'], list))
 
 @aylien_vcr.use_cassette()
-def test_microformats():
-  client = textapi.Client(APP_ID, APP_KEY)
-  microformats = client.Microformats('http://codepen.io/anon/pen/ZYaKbz.html')
-  ok_('hCards' in microformats)
-  ok_(isinstance(microformats['hCards'], list))
-
-@aylien_vcr.use_cassette()
 def test_imagetags():
   client = textapi.Client(APP_ID, APP_KEY)
   image_tags = client.ImageTags('http://gluegadget.com/liffey/IMG_1209.png')
   for prop in ['image', 'tags']:
     ok_(prop in image_tags)
-
-@aylien_vcr.use_cassette()
-def test_unsupervised_classification():
-  client = textapi.Client(APP_ID, APP_KEY)
-  classification = client.UnsupervisedClassify({
-    'url': 'http://techcrunch.com/2015/07/16/microsoft-will-never-give-up-on-mobile',
-    'class': ['technology', 'sports'],
-  })
-  for prop in ['classes', 'text']:
-    ok_(prop in classification)
-  ok_(isinstance(classification['classes'], list))
 
 def test_combined():
   with aylien_vcr.use_cassette('tests/fixtures/cassettes/test_combined.yaml') as cass:
