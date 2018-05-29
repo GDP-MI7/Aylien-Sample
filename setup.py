@@ -50,6 +50,7 @@ setup(
     description="AYLIEN Text API Client Library for Python",
     long_description=open('README.rst').read(),
     author="Aylien, Inc.",
+    support_email="support@aylien.com",
     url="https://github.com/AYLIEN/aylien_textapi_python",
     install_requires=install_requires,
     tests_require=tests_require,
