@@ -179,6 +179,6 @@ def test_aspect_based_sentiment():
 def test_elsa():
   client = textapi.Client(APP_ID, APP_KEY)
   elsa = client.Elsa({'url': 'http://www.businessinsider.com/carl-icahn-open-letter-to-apple-2014-1'})
-  for prop in ['text', 'language', 'entities']:
+  for prop in ['text', 'entities']:
     ok_(prop in elsa)
   ok_(isinstance(elsa['entities'], list))

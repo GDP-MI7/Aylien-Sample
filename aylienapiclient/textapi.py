@@ -559,7 +559,6 @@ class Client(object):
 
       {
         'text (str)': Text,
-        'language (str)': Language of text,
         'entities (list of dict)': [{
           'mentions (list of dict)': [{
             'offset (int)': Offset in text,
