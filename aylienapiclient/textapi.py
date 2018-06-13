@@ -339,43 +339,6 @@ class Client(object):
 
     return response
 
-  """Returns phrases related to the provided unigram, or bigram.
-
-  Args:
-    options (dict):
-      {
-        'phrase (str)': Phrase,
-        'count (int, optional)': Number of phrases to return.
-          Default is 20. Max is 100.
-      }
-
-  Returns:
-    A dict with following structure:
-
-      {
-        'phrase (str)': Phrase,
-        'related (list of dict)': [{
-          'phrase (str)': Related phrase,
-          'distance (float)': Distance
-        }]
-      }
-
-  Raises:
-    aylienapiclient.errors.MissingParameterError if both
-      phrase is missing.
-  """
-  def Related(self, options):
-    if isinstance(options, basestring):
-      tmp = {}
-      tmp['phrase'] = options
-      options = tmp
-    if 'phrase' not in options:
-      raise MissingParameterError('You must provide a phrase')
-
-    response = self._executeRequest('related', options)
-
-    return response
-
   """Detects sentiment of a body of text.
 
   Detects sentiment of a document in terms of
@@ -512,35 +475,6 @@ class Client(object):
 
     return response
 
-
-  """Extracts microformats.
-
-  Args:
-    options (dict):
-
-      {
-        'url (str)': URL
-      }
-
-  Returns:
-    A dict with these keys:
-
-      {
-        'hCards (list of hCard)': hCards
-      }
-  Raises:
-    aylienapiclient.errors.MissingParameterError if url
-      is missing
-  """
-  def Microformats(self, options):
-    options = self._normalizeInput(options)
-    if 'url' not in options:
-      raise MissingParameterError('You must provide a url')
-
-    response = self._executeRequest('microformats', options)
-
-    return response
-
   """Assigns relevant tag to an image.
 
   Args:
@@ -571,44 +505,6 @@ class Client(object):
       raise MissingParameterError('You must provide a url')
 
     response = self._executeRequest('image-tags', options)
-
-    return response
-
-  """Picks the most semantically relevant class label or tag.
-
-  Args:
-    options (dict):
-
-      {
-        'url (str, optional)': URL,
-        'text (str, optional)': Text,
-        'class (list of str)': List of classes to classify into,
-        'number_of_concepts (int, optional)': Specify the number
-          of concepts used to measure the semantic similarity
-          between two words
-      }
-
-  Returns:
-    A dict with following structure:
-
-      {
-        'text (str)': Text,
-        'classes (list of dict)': [{
-          'label (str)': Class label,
-          'score (float)': Score
-        }]
-      }
-
-  Raises:
-    aylienapiclient.errors.MissingParameterError if both
-      url and text are missing
-  """
-  def UnsupervisedClassify(self, options):
-    options = self._normalizeInput(options)
-    if 'text' not in options and 'url' not in options:
-      raise MissingParameterError('You must either provide url or text')
-
-    response = self._executeRequest('classify/unsupervised', options)
 
     return response
 
@@ -645,6 +541,59 @@ class Client(object):
       raise MissingParameterError('You must either provide url or text')
 
     response = self._executeRequest('combined', options)
+
+    return response
+
+  """Runs Entity Level Sentiment Analysis
+
+  Args:
+    options (dict):
+
+      {
+        'url (str, optional)': URL,
+        'text (str, optional)': Text
+      }
+
+  Returns:
+    A dict with following structure:
+
+      {
+        'text (str)': Text,
+        'entities (list of dict)': [{
+          'mentions (list of dict)': [{
+            'offset (int)': Offset in text,
+            'confidence (float)': Confidence,
+            'text (str)': Text,
+            'sentiment (dict)': {
+              'polarity (str)': Polarity positive or negative,
+              'confidence (float)': Confidence
+            }
+          }],
+          'overall_sentiment (dict)': {
+            'polarity (str)': Polarity positive or negative,
+            'confidence (float)': Confidence
+          },
+          'type (str): Entities types',
+          'links (list of dict)': [{
+            'uri (str)': Entity resource link,
+            'provider (str)': Entity provider,
+            'types (list of str)': Entity type link,
+            'confidence (float)': Confidence
+          }]
+        }]
+      }
+
+  Raises:
+    aylienapiclient.errors.MissingParameterError if both
+      url and text are missing
+  """
+
+  def Elsa(self, options):
+    options = self._normalizeInput(options)
+    if 'text' not in options and 'url' not in options:
+      raise MissingParameterError('You must either provide url or text')
+
+    response = self._executeRequest('elsa', options)
 
     return response
 
